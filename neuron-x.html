@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEURON-X | NYC Outbreak Response</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Barlow+Condensed:wght@300;400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080810;
+    --bg2: #0d0d18;
+    --bg3: #121220;
+    --red: #e03030;
+    --red-dim: #8a0000;
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.15);
+    --teal: #00c9b1;
+    --teal-dim: rgba(0,201,177,0.15);
+    --violet: #9b6dff;
+    --coral: #ff6b4a;
+    --ice: #7ec8e3;
+    --white: #ece8e0;
+    --white-dim: rgba(236,232,224,0.6);
+    --white-faint: rgba(236,232,224,0.08);
+    --mono: 'DM Mono', monospace;
+    --head: 'Bebas Neue', sans-serif;
+    --subhead: 'Barlow Condensed', sans-serif;
+    --body: 'Crimson Pro', serif;
+    --display: 'VT323', monospace;
+    --serif-italic: 'Playfair Display', serif;
+    --border: 1px solid rgba(224,48,48,0.3);
+    --border-dim: 1px solid rgba(236,232,224,0.08);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--white);font-family:var(--body);font-size:18px;line-height:1.65;overflow-x:hidden;position:relative}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);pointer-events:none;z-index:9999}
+  body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:0.4}
+
+  #alert-banner{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--red);color:#fff;font-family:var(--mono);font-size:0.75rem;letter-spacing:0.12em;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 20px;text-transform:uppercase}
+  .pulse-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse-blink 1.2s ease-in-out infinite;flex-shrink:0}
+  @keyframes pulse-blink{0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(255,255,255,0.7)}50%{opacity:0.6;transform:scale(1.3);box-shadow:0 0 0 6px rgba(255,255,255,0)}}
+
+  nav{position:fixed;top:33px;left:0;right:0;z-index:999;background:rgba(8,8,16,0.94);border-bottom:var(--border);backdrop-filter:blur(10px);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:52px}
+  .nav-logo{font-family:var(--mono);font-size:0.85rem;color:var(--red);letter-spacing:0.2em;text-decoration:none}
+  .nav-links{display:flex;gap:28px;list-style:none}
+  .nav-links a{font-family:var(--mono);font-size:0.7rem;letter-spacing:0.15em;color:var(--white-dim);text-decoration:none;text-transform:uppercase;transition:color 0.2s}
+  .nav-links a:hover{color:var(--amber)}
+  .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+  .hamburger span{display:block;width:24px;height:2px;background:var(--white-dim);transition:all 0.3s}
+
+  #hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding-top:85px;text-align:center}
+  #particle-canvas{position:absolute;inset:0;pointer-events:none;opacity:0.4}
+  .hero-pulse{position:absolute;width:600px;height:600px;border-radius:50%;border:1px solid rgba(224,48,48,0.15);animation:expand-pulse 4s ease-out infinite;pointer-events:none}
+  .hero-pulse:nth-child(2){animation-delay:1.3s}
+  .hero-pulse:nth-child(3){animation-delay:2.6s}
+  @keyframes expand-pulse{0%{transform:scale(0.1);opacity:0.6}100%{transform:scale(2.5);opacity:0}}
+  .hero-content{position:relative;z-index:2}
+  .hero-eyebrow{font-family:var(--mono);font-size:0.7rem;letter-spacing:0.35em;color:var(--red);text-transform:uppercase;margin-bottom:20px}
+  .hero-title{font-family:var(--display);font-size:clamp(90px,18vw,200px);font-weight:400;letter-spacing:0.08em;line-height:0.85;color:var(--white);text-transform:uppercase;position:relative;animation:glitch-idle 8s infinite;text-shadow:0 0 40px rgba(224,48,48,0.3)}
+  .hero-title::before,.hero-title::after{content:'NEURON-X';position:absolute;inset:0;opacity:0}
+  .hero-title::before{color:var(--red);clip-path:polygon(0 30%,100% 30%,100% 50%,0 50%);animation:glitch-top 8s infinite}
+  .hero-title::after{color:#00ffff;clip-path:polygon(0 55%,100% 55%,100% 70%,0 70%);animation:glitch-bot 8s infinite;opacity:0}
+  @keyframes glitch-idle{0%,90%,100%{transform:translate(0)}91%{transform:translate(-3px,1px)}92%{transform:translate(3px,-1px)}93%{transform:translate(0)}95%{transform:translate(2px,2px)}96%{transform:translate(-2px,-1px)}97%{transform:translate(0)}}
+  @keyframes glitch-top{0%,89%,100%{opacity:0;transform:translate(0)}90%{opacity:0.7;transform:translate(-4px,0)}91%{opacity:0.5;transform:translate(4px,0)}92%{opacity:0;transform:translate(0)}95%{opacity:0.4;transform:translate(3px,1px)}96%{opacity:0}}
+  @keyframes glitch-bot{0%,89%,100%{opacity:0;transform:translate(0)}90%{opacity:0.5;transform:translate(4px,0)}91%{opacity:0.3;transform:translate(-3px,0)}92%{opacity:0}}
+  .hero-tagline{font-family:var(--serif-italic);font-style:italic;font-size:clamp(1rem,1.8vw,1.25rem);color:var(--amber);letter-spacing:0.02em;margin-top:28px;margin-bottom:48px;padding:14px 28px;border-top:1px solid rgba(245,166,35,0.35);border-bottom:1px solid rgba(245,166,35,0.35)}
+  .hero-stats{display:flex;gap:48px;justify-content:center;flex-wrap:wrap}
+  .stat-item{text-align:center}
+  .stat-value{font-family:var(--head);font-size:3rem;font-weight:400;color:var(--teal);line-height:1;display:block}
+  .stat-label{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.2em;color:var(--white-dim);text-transform:uppercase;margin-top:4px;display:block}
+  .hero-scroll{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:0.65rem;letter-spacing:0.2em;color:var(--white-dim);text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:8px;animation:float-up-down 2s ease-in-out infinite}
+  .hero-scroll::after{content:'';width:1px;height:40px;background:linear-gradient(to bottom,var(--white-dim),transparent)}
+  @keyframes float-up-down{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+  section{padding:100px 40px;max-width:1200px;margin:0 auto}
+  .section-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.35em;color:var(--teal);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+  .section-label::before{content:'//';color:rgba(0,201,177,0.4)}
+  .section-title{font-family:var(--head);font-size:clamp(2.4rem,5vw,4rem);font-weight:400;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:48px;line-height:1;color:var(--white)}
+  hr.section-rule{border:none;border-top:var(--border);margin-bottom:48px}
+
+  #profile .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:rgba(224,48,48,0.15);border:var(--border)}
+  .profile-cell{background:var(--bg2);padding:28px 32px;position:relative;transition:background 0.2s}
+  .profile-cell:hover{background:var(--bg3)}
+  .cell-icon{font-size:1.4rem;margin-bottom:10px;display:block}
+  .cell-tag{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.25em;text-transform:uppercase;padding:3px 8px;border-radius:2px;margin-bottom:10px;display:inline-block}
+  .tag-bio{background:rgba(224,48,48,0.18);color:#ff7070;border:1px solid rgba(224,48,48,0.4)}
+  .tag-trans{background:rgba(245,166,35,0.15);color:var(--amber);border:1px solid rgba(245,166,35,0.4)}
+  .tag-loc{background:rgba(0,201,177,0.12);color:var(--teal);border:1px solid rgba(0,201,177,0.4)}
+  .tag-eth{background:rgba(155,109,255,0.12);color:var(--violet);border:1px solid rgba(155,109,255,0.4)}
+  .tag-pop{background:rgba(126,200,227,0.12);color:var(--ice);border:1px solid rgba(126,200,227,0.4)}
+  .tag-orig{background:rgba(255,107,74,0.12);color:var(--coral);border:1px solid rgba(255,107,74,0.4)}
+  .tag-narr{background:rgba(155,109,255,0.12);color:var(--violet);border:1px solid rgba(155,109,255,0.4)}
+  .cell-title{font-family:var(--subhead);font-size:1.2rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;color:var(--white)}
+  .cell-body{font-size:1rem;color:var(--white-dim);line-height:1.7;font-family:var(--body)}
+  .profile-cell.wide{grid-column:span 2;border-top:var(--border)}
+
+  #timeline{background:var(--bg2);max-width:100%;padding:100px 40px;border-top:var(--border);border-bottom:var(--border)}
+  #timeline .inner{max-width:1200px;margin:0 auto}
+  .timeline-track{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:20px}
+  .timeline-node{position:relative;padding:32px 28px;background:var(--bg);border-top:3px solid transparent;transition:transform 0.2s}
+  .timeline-node:hover{transform:translateY(-4px)}
+  .node-incubation{border-color:#555}
+  .node-stage1{border-color:var(--amber)}
+  .node-stage2{border-color:var(--coral)}
+  .node-stage3{border-color:var(--red)}
+  .node-days{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.2em;color:var(--white-dim);text-transform:uppercase;margin-bottom:8px}
+  .node-stage-label{font-family:var(--head);font-size:1.6rem;font-weight:400;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px}
+  .node-incubation .node-stage-label{color:#888}
+  .node-stage1 .node-stage-label{color:var(--amber)}
+  .node-stage2 .node-stage-label{color:var(--coral)}
+  .node-stage3 .node-stage-label{color:var(--red)}
+  .node-symptoms{list-style:none;margin-bottom:20px}
+  .node-symptoms li{font-size:0.95rem;color:var(--white-dim);font-family:var(--body);padding:5px 0;border-bottom:var(--border-dim);display:flex;align-items:center;gap:8px}
+  .node-symptoms li::before{content:'▸';font-size:0.6rem;flex-shrink:0}
+  .node-incubation .node-symptoms li::before{color:#555}
+  .node-stage1 .node-symptoms li::before{color:var(--amber)}
+  .node-stage2 .node-symptoms li::before{color:var(--coral)}
+  .node-stage3 .node-symptoms li::before{color:var(--red)}
+  .severity-bar{height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:16px;overflow:hidden}
+  .severity-fill{height:100%;border-radius:2px;transition:width 1.2s ease}
+  .sev-incubation .severity-fill{width:10%;background:#555}
+  .sev-s1 .severity-fill{width:30%;background:var(--amber)}
+  .sev-s2 .severity-fill{width:65%;background:var(--coral)}
+  .sev-s3 .severity-fill{width:100%;background:var(--red)}
+  .node-badge{margin-top:16px;font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;padding:4px 10px;display:inline-block}
+  .badge-contagious{background:rgba(245,166,35,0.15);color:var(--amber);border:1px solid rgba(245,166,35,0.4)}
+  .badge-critical{background:rgba(255,107,74,0.15);color:var(--coral);border:1px solid rgba(255,107,74,0.4)}
+  .badge-fatal{background:rgba(224,48,48,0.3);color:#ff4444;border:1px solid var(--red)}
+
+  #figures .figures-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px;background:rgba(224,48,48,0.15)}
+  .figure-card{background:var(--bg2);padding:0;position:relative;overflow:hidden;transition:background 0.2s}
+  .figure-card:hover{background:var(--bg3)}
+  .card-header{padding:20px 24px 16px;border-bottom:var(--border);display:flex;align-items:flex-start;gap:16px}
+  .card-id-badge{width:48px;height:48px;background:rgba(224,48,48,0.15);border:var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.7rem;color:var(--red);flex-shrink:0}
+  .card-name{font-family:var(--subhead);font-size:1.3rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;line-height:1.2;margin-bottom:4px}
+  .card-role{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.15em;color:var(--teal);text-transform:uppercase}
+  .card-body{padding:20px 24px 24px}
+  .card-desc{font-size:1rem;font-family:var(--body);color:var(--white-dim);line-height:1.7;margin-bottom:16px}
+  .card-status{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:4px 10px;display:inline-block}
+  .status-active{background:rgba(0,201,177,0.12);color:var(--teal);border:1px solid rgba(0,201,177,0.4)}
+  .status-infected{background:rgba(255,107,74,0.15);color:var(--coral);border:1px solid rgba(255,107,74,0.5)}
+  .status-anonymous{background:rgba(155,109,255,0.12);color:var(--violet);border:1px solid rgba(155,109,255,0.4)}
+  .redact{background:var(--white-dim);color:transparent;user-select:none;border-radius:2px;display:inline;letter-spacing:0}
+
+  #narratives{background:var(--bg2);max-width:100%;border-top:var(--border);border-bottom:var(--border);padding:100px 40px}
+  #narratives .inner{max-width:1200px;margin:0 auto}
+  .narratives-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:rgba(224,48,48,0.1)}
+  .narrative-card{background:var(--bg);padding:32px;position:relative;border-top:3px solid transparent;transition:background 0.2s}
+  .narrative-card:hover{background:var(--bg3)}
+  .narrative-official{border-color:var(--teal)}
+  .narrative-disputed{border-color:var(--amber)}
+  .narrative-unverified{border-color:var(--violet)}
+  .narrative-dangerous{border-color:var(--red)}
+  .narrative-badge{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;padding:5px 12px;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
+  .narrative-official .narrative-badge{background:rgba(0,201,177,0.12);color:var(--teal);border:1px solid rgba(0,201,177,0.4)}
+  .narrative-disputed .narrative-badge{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,166,35,0.4)}
+  .narrative-unverified .narrative-badge{background:rgba(155,109,255,0.12);color:var(--violet);border:1px solid rgba(155,109,255,0.4)}
+  .narrative-dangerous .narrative-badge{background:rgba(224,48,48,0.2);color:var(--red);border:1px solid rgba(224,48,48,0.4)}
+  .narrative-title{font-family:var(--subhead);font-size:1.35rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;line-height:1.2}
+  .narrative-body{font-size:1rem;font-family:var(--body);color:var(--white-dim);line-height:1.75;margin-bottom:16px}
+  .narrative-source{font-family:var(--mono);font-size:0.65rem;color:rgba(232,232,232,0.3);letter-spacing:0.1em}
+  .narrative-source strong{color:rgba(232,232,232,0.5)}
+
+  .docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px;background:rgba(224,48,48,0.1)}
+  .doc-card{background:var(--bg2);padding:28px;display:flex;flex-direction:column;gap:16px;transition:background 0.2s;position:relative;overflow:hidden}
+  .doc-card::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:linear-gradient(225deg,rgba(224,48,48,0.08) 0%,transparent 60%)}
+  .doc-card:hover{background:var(--bg3)}
+  .doc-type-badge{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;padding:3px 10px;display:inline-block;width:fit-content}
+  .type-video{background:rgba(224,48,48,0.15);color:#ff7070;border:1px solid rgba(224,48,48,0.4)}
+  .type-newsletter{background:rgba(0,201,177,0.12);color:var(--teal);border:1px solid rgba(0,201,177,0.4)}
+  .type-diary{background:rgba(255,107,74,0.12);color:var(--coral);border:1px solid rgba(255,107,74,0.4)}
+  .doc-title{font-family:var(--subhead);font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--white);flex-grow:1}
+  .doc-desc{font-size:0.95rem;font-family:var(--body);color:var(--white-dim);line-height:1.65}
+  .doc-btn{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;padding:10px 20px;background:transparent;border:1px solid rgba(0,201,177,0.4);color:var(--teal);cursor:pointer;transition:all 0.2s;width:fit-content;text-decoration:none;display:inline-block}
+  .doc-btn:hover{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+
+  .faq-list{display:flex;flex-direction:column;gap:2px}
+  .faq-item{background:var(--bg2);border-left:2px solid transparent;transition:border-color 0.2s}
+  .faq-item.open{border-color:var(--violet)}
+  .faq-question{padding:20px 28px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:20px;user-select:none}
+  .faq-q-text{font-family:var(--subhead);font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em}
+  .faq-chevron{width:20px;height:20px;flex-shrink:0;position:relative;transition:transform 0.3s}
+  .faq-chevron::before,.faq-chevron::after{content:'';position:absolute;top:50%;left:50%;width:10px;height:1.5px;background:var(--violet);transform-origin:center}
+  .faq-chevron::before{transform:translate(-50%,-50%) rotate(45deg);margin-left:-3px}
+  .faq-chevron::after{transform:translate(-50%,-50%) rotate(-45deg);margin-left:3px}
+  .faq-item.open .faq-chevron{transform:rotate(90deg)}
+  .faq-answer{max-height:0;overflow:hidden;transition:max-height 0.4s ease,padding 0.3s;padding:0 28px}
+  .faq-item.open .faq-answer{max-height:400px;padding:0 28px 24px}
+  .faq-answer p{font-size:1rem;font-family:var(--body);color:var(--white-dim);line-height:1.75}
+  .faq-answer .warning-inline{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.68rem;letter-spacing:0.1em;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,166,35,0.3);padding:4px 10px;margin-top:12px}
+
+  /* VIDEO */
+  #video-section{background:var(--bg);max-width:100%;padding:100px 40px;border-top:var(--border)}
+  #video-section .inner{max-width:1200px;margin:0 auto}
+  .video-wrapper{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border:var(--border);background:#000}
+  .video-wrapper iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+  .video-caption{margin-top:16px;font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;color:var(--white-dim);text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .video-caption::before{content:'▶';color:var(--red);font-size:0.6rem}
+
+  /* NEWSLETTER */
+  #newsletter-section{background:var(--bg2);max-width:100%;padding:100px 40px;border-top:var(--border);border-bottom:var(--border)}
+  #newsletter-section .inner{max-width:1200px;margin:0 auto}
+  .newsletter-container{background:#f5f0e8;color:#1a1a1a;border:3px solid #1a1a1a;max-width:780px;margin:0 auto;font-family:'Crimson Pro',Georgia,serif;position:relative}
+  .newsletter-header{background:#1a1a1a;padding:32px 48px 28px;text-align:center}
+  .newsletter-kicker{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.35em;color:rgba(245,166,35,0.9);text-transform:uppercase;margin-bottom:12px;display:block}
+  .newsletter-masthead{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.8rem);font-weight:400;letter-spacing:0.12em;color:#f5f0e8;text-transform:uppercase;line-height:1;margin-bottom:8px}
+  .newsletter-dateline{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.2em;color:rgba(245,240,232,0.5);text-transform:uppercase;margin-top:12px;padding-top:12px;border-top:1px solid rgba(245,240,232,0.15)}
+  .newsletter-rule-red{height:5px;background:var(--red)}
+  .newsletter-body{padding:40px 48px}
+  .newsletter-headline{font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;color:#0a0a0a;line-height:1.2;margin-bottom:8px}
+  .newsletter-subhead{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:400;color:#444;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #ccc}
+  .newsletter-byline{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.15em;color:#888;text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;gap:12px}
+  .newsletter-byline::before{content:'';display:block;width:24px;height:1px;background:var(--red)}
+  .newsletter-columns{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:28px}
+  .newsletter-text p{font-size:1.05rem;line-height:1.75;color:#1a1a1a;margin-bottom:16px;font-family:'Crimson Pro',Georgia,serif}
+  .newsletter-pullquote{border-left:3px solid var(--red);padding:16px 20px;margin:24px 0;background:rgba(224,48,48,0.04)}
+  .newsletter-pullquote blockquote{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:1.15rem;color:#1a1a1a;line-height:1.6;margin-bottom:8px}
+  .newsletter-pullquote cite{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:#888;text-transform:uppercase;font-style:normal}
+  .newsletter-alert-box{background:#1a1a1a;color:#f5f0e8;padding:20px 24px;margin-top:28px;display:flex;gap:16px;align-items:flex-start}
+  .newsletter-alert-icon{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--amber);flex-shrink:0;line-height:1}
+  .newsletter-alert-text{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;color:rgba(245,240,232,0.8);line-height:1.7;text-transform:uppercase}
+  .newsletter-footer-bar{background:#1a1a1a;padding:16px 48px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .newsletter-footer-bar span{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.15em;color:rgba(245,240,232,0.4);text-transform:uppercase}
+
+  /* DIARY / FORUM */
+  #diary-section{background:var(--bg);max-width:100%;padding:100px 40px;border-top:var(--border)}
+  #diary-section .inner{max-width:900px;margin:0 auto}
+
+  .forum-container{background:var(--bg2);border:1px solid rgba(155,109,255,0.2);border-radius:4px;overflow:hidden}
+
+  .forum-header{background:#0a0a14;padding:0;border-bottom:1px solid rgba(155,109,255,0.15)}
+
+  .forum-breadcrumb{padding:12px 20px;font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:rgba(236,232,224,0.3);text-transform:uppercase;border-bottom:1px solid rgba(155,109,255,0.1);display:flex;align-items:center;gap:8px}
+  .forum-breadcrumb span{color:var(--violet);opacity:0.7}
+
+  .forum-thread-title-bar{padding:20px 24px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  .forum-thread-title{font-family:var(--subhead);font-size:1.5rem;font-weight:700;letter-spacing:0.05em;color:var(--white);line-height:1.2}
+
+  .forum-thread-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .forum-tag{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;padding:3px 8px;border-radius:2px}
+  .ftag-pinned{background:rgba(245,166,35,0.15);color:var(--amber);border:1px solid rgba(245,166,35,0.3)}
+  .ftag-flair{background:rgba(155,109,255,0.12);color:var(--violet);border:1px solid rgba(155,109,255,0.3)}
+  .ftag-nyc{background:rgba(0,201,177,0.1);color:var(--teal);border:1px solid rgba(0,201,177,0.3)}
+
+  .forum-stats-bar{padding:10px 24px;background:rgba(0,0,0,0.2);border-top:1px solid rgba(155,109,255,0.08);display:flex;gap:24px}
+  .forum-stat{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.12em;color:rgba(236,232,224,0.35);text-transform:uppercase}
+  .forum-stat strong{color:rgba(236,232,224,0.6)}
+
+  .forum-post{display:flex;gap:0;border-bottom:1px solid rgba(155,109,255,0.08)}
+  .forum-post:last-child{border-bottom:none}
+
+  .forum-sidebar{width:160px;flex-shrink:0;background:rgba(0,0,0,0.15);padding:20px 16px;border-right:1px solid rgba(155,109,255,0.08);display:flex;flex-direction:column;align-items:center;gap:10px}
+
+  .forum-avatar{width:52px;height:52px;border-radius:50%;background:rgba(155,109,255,0.15);border:2px solid rgba(155,109,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:1.3rem;color:var(--violet)}
+
+  .forum-username{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.1em;color:var(--white-dim);text-align:center;word-break:break-all}
+  .forum-user-title{font-family:var(--mono);font-size:0.55rem;letter-spacing:0.1em;color:rgba(236,232,224,0.3);text-transform:uppercase;text-align:center}
+  .forum-post-count{font-family:var(--mono);font-size:0.55rem;color:rgba(236,232,224,0.25);text-transform:uppercase;letter-spacing:0.1em;text-align:center}
+
+  .forum-post-body{flex:1;padding:24px 28px;min-width:0}
+
+  .forum-post-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+  .forum-post-number{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:rgba(236,232,224,0.25);text-transform:uppercase}
+  .forum-post-timestamp{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.12em;color:rgba(236,232,224,0.3);text-transform:uppercase}
+
+  .forum-post-text{font-family:var(--body);font-size:1rem;color:var(--white-dim);line-height:1.8}
+  .forum-post-text p{margin-bottom:14px}
+  .forum-post-text p:last-child{margin-bottom:0}
+  .forum-post-text strong{color:var(--white);font-weight:600}
+
+  .forum-post-footer{margin-top:16px;padding-top:12px;border-top:1px solid rgba(155,109,255,0.08);display:flex;gap:16px;align-items:center}
+  .forum-reaction{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.1em;color:rgba(236,232,224,0.3);text-transform:uppercase;display:flex;align-items:center;gap:5px;cursor:default}
+  .forum-reaction.up{color:rgba(0,201,177,0.5)}
+  .forum-reaction.flag{color:rgba(224,48,48,0.4)}
+
+  /* OP post styling */
+  .forum-post.op .forum-sidebar{background:rgba(155,109,255,0.05)}
+  .forum-post.op .forum-avatar{background:rgba(155,109,255,0.2);border-color:rgba(155,109,255,0.5)}
+  .forum-op-badge{font-family:var(--mono);font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;padding:2px 6px;background:rgba(155,109,255,0.15);color:var(--violet);border:1px solid rgba(155,109,255,0.3);border-radius:2px}
+
+  footer{border-top:var(--border);padding:48px 40px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:24px;background:var(--bg2)}
+  .footer-left{display:flex;flex-direction:column;gap:6px}
+  .footer-logo{font-family:var(--display);font-size:2.4rem;font-weight:400;letter-spacing:0.1em;color:var(--red);text-transform:uppercase;line-height:1}
+  .footer-sub{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.2em;color:var(--white-dim);text-transform:uppercase}
+  .footer-right{text-align:right;display:flex;flex-direction:column;gap:4px}
+  .footer-right span{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;color:rgba(232,232,232,0.3);text-transform:uppercase}
+  .footer-disclaimer{width:100%;padding-top:24px;border-top:var(--border-dim);font-family:var(--mono);font-size:0.62rem;letter-spacing:0.1em;color:rgba(232,232,232,0.2);text-align:center;line-height:1.8}
+
+  @media(max-width:900px){
+    #profile .profile-grid{grid-template-columns:1fr}
+    .profile-cell.wide{grid-column:span 1}
+    .timeline-track{grid-template-columns:1fr 1fr}
+    .narratives-grid{grid-template-columns:1fr}
+    nav{padding:0 20px}
+    .nav-links{display:none;flex-direction:column;position:absolute;top:52px;left:0;right:0;background:rgba(8,8,16,0.97);padding:20px;gap:16px;border-bottom:var(--border)}
+    .nav-links.open{display:flex}
+    .hamburger{display:flex}
+    section{padding:80px 20px}
+    #timeline,#narratives,#video-section,#newsletter-section,#diary-section{padding:80px 20px}
+    footer{padding:40px 20px}
+    .hero-stats{gap:28px}
+    .newsletter-columns{grid-template-columns:1fr;gap:0}
+    .newsletter-body{padding:28px 24px}
+    .newsletter-header{padding:24px 24px 20px}
+    .newsletter-footer-bar{padding:14px 24px}
+    .forum-sidebar{width:120px;padding:16px 12px}
+    .forum-post-body{padding:18px 16px}
+  }
+  @media(max-width:600px){
+    .timeline-track{grid-template-columns:1fr}
+    .docs-grid{grid-template-columns:1fr}
+    .footer-right{text-align:left}
+    #alert-banner{font-size:0.62rem;gap:8px}
+    .forum-sidebar{display:none}
+  }
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="alert-banner">
+  <span class="pulse-dot"></span>
+  ACTIVE OUTBREAK — NEW YORK CITY — LAST UPDATED: MAY 2026 — EMERGENCY HEALTH DIRECTIVE IN EFFECT
+  <span class="pulse-dot"></span>
+</div>
+
+<nav>
+  <a href="#hero" class="nav-logo">NYX-RESPONSE</a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="#profile">Profile</a></li>
+    <li><a href="#timeline">Timeline</a></li>
+    <li><a href="#figures">Figures</a></li>
+    <li><a href="#narratives">Narratives</a></li>
+    <li><a href="#documents">Documents</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" onclick="document.getElementById('nav-links').classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<section id="hero" style="padding:0;max-width:100%">
+  <canvas id="particle-canvas"></canvas>
+  <div class="hero-pulse"></div>
+  <div class="hero-pulse"></div>
+  <div class="hero-pulse"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">NYC DEPARTMENT OF HEALTH · EMERGENCY BROADCAST</p>
+    <h1 class="hero-title">NEURON-X</h1>
+    <p class="hero-tagline">"You were contagious before you knew you were sick."</p>
+    <div class="hero-stats">
+      <div class="stat-item"><span class="stat-value" data-target="87">0</span><span class="stat-label">% Fatality Rate</span></div>
+      <div class="stat-item"><span class="stat-value" data-target="14">0</span><span class="stat-label">Day Incubation</span></div>
+      <div class="stat-item"><span class="stat-value" data-target="3">0</span><span class="stat-label">Disease Stages</span></div>
+      <div class="stat-item"><span class="stat-value">MAY</span><span class="stat-label">2026 — NYC</span></div>
+    </div>
+  </div>
+  <div class="hero-scroll">SCROLL</div>
+</section>
+
+<!-- PANDEMIC PROFILE -->
+<section id="profile">
+  <p class="section-label">SECTION 01</p>
+  <h2 class="section-title">Pandemic Profile</h2>
+  <hr class="section-rule">
+  <div class="profile-grid">
+
+    <div class="profile-cell reveal">
+      <span class="cell-icon">🧬</span>
+      <span class="cell-tag tag-bio">Pathogen</span>
+      <h3 class="cell-title">What Is Neuron-X?</h3>
+      <p class="cell-body">Neuron-X is not a virus you catch from outside. A certain fungus, altered by years of chemical pollution, spreads its cells into the air. When those cells are inhaled by a human or animal host, they interact with the host's DNA and cause the body to produce a virus internally. That virus targets the nervous system. It destroys brain function progressively, stripping the infected person of their ability to speak, then move, while leaving them fully conscious. There is nothing external to quarantine. The source is already inside.</p>
+    </div>
+
+    <div class="profile-cell reveal">
+      <span class="cell-icon">💨</span>
+      <span class="cell-tag tag-trans">Transmission</span>
+      <h3 class="cell-title">How It Spreads</h3>
+      <p class="cell-body">Neuron-X spreads through the air from person to person. Risk is not binary: the more time you spend near someone infected, the higher your chance of contracting it. That detail has changed how people move through the city. Conversations have gotten shorter. No one lingers. What makes containment particularly hard is a <strong>two-week silent incubation period</strong> during which carriers are fully contagious without any symptoms at all. Animals are also confirmed vectors, widening the potential transmission network beyond human contact.</p>
+    </div>
+
+    <div class="profile-cell reveal">
+      <span class="cell-icon">📍</span>
+      <span class="cell-tag tag-loc">Origin &amp; Location</span>
+      <h3 class="cell-title">When &amp; Where</h3>
+      <p class="cell-body">The outbreak is active now, in <strong>New York City, May 2026</strong>. Neuron-X was officially identified approximately three weeks ago. The origin traces back to industrial pollution that altered a local fungal species over time, enabling it to spread through the air and interact with human DNA in a way it never had before. This was not sudden. It built up gradually, which is part of why the question of blame has become so complicated and so charged.</p>
+    </div>
+
+    <div class="profile-cell reveal">
+      <span class="cell-icon">👥</span>
+      <span class="cell-tag tag-pop">Affected Populations</span>
+      <h3 class="cell-title">Who Is Most At Risk</h3>
+      <p class="cell-body">The virus can infect anyone, but the ability to avoid it is not evenly distributed. <strong>Citizens, students, teachers, researchers, transit workers, store workers, and delivery drivers</strong> all face different levels of exposure depending on how much their daily lives can be adjusted. People who cannot work from home are on the front lines whether they chose to be or not. Healthcare workers face the sharpest version of this: direct, prolonged contact with patients whose care requires physical presence, which is exactly how the virus spreads most efficiently.</p>
+    </div>
+
+    <div class="profile-cell reveal">
+      <span class="cell-icon">⚖️</span>
+      <span class="cell-tag tag-eth">Core Ethical Issue</span>
+      <h3 class="cell-title">The Moral Reckoning</h3>
+      <p class="cell-body"><strong>Are healthcare workers obligated to treat Neuron-X patients, knowing that treating them could kill them?</strong> Stage 3 patients are fully conscious and need intensive hands-on care. PPE helps but does not eliminate risk. Outside hospitals right now, two sides have formed. One argues that doctors and nurses took an oath and duty does not stop at personal discomfort. The other argues that expecting someone to walk into a potentially fatal situation with inadequate protection is not a duty at all. It is negligence dressed up as heroism. No resolution is in sight.</p>
+    </div>
+
+    <div class="profile-cell reveal">
+      <span class="cell-icon">🔬</span>
+      <span class="cell-tag tag-orig">Origin Theory</span>
+      <h3 class="cell-title">How Did This Happen?</h3>
+      <p class="cell-body">The prevailing scientific understanding is that prolonged industrial pollution altered the chemistry of the local environment enough to change how a native fungal species behaves. The modified fungus now releases airborne cells that, when inhaled, interact with host DNA to generate the Neuron-X virus from within the body. The idea that this was not sudden bad luck but something that accumulated over time has shifted how people think about responsibility: not just for spreading the virus, but for letting the conditions exist that created it.</p>
+    </div>
+
+    <div class="profile-cell wide reveal">
+      <span class="cell-icon">📡</span>
+      <span class="cell-tag tag-narr">Information Landscape</span>
+      <h3 class="cell-title">Competing Narratives</h3>
+      <p class="cell-body">Four different explanations for this outbreak are circulating at the same time, and they are not equal in their accuracy or their consequences. The official account sits alongside disputed claims, unverified theories, and at least one narrative that is actively causing people to avoid hospitals. Misinformation about animal vectors and airborne transmission is already visible in how differently people in the same city are responding to the same threat. See the <a href="#narratives" style="color:var(--amber)">Narratives section</a> below for a full breakdown with credibility ratings and harm assessments.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- DISEASE TIMELINE -->
+<div id="timeline">
+  <div class="inner">
+    <p class="section-label">SECTION 02</p>
+    <h2 class="section-title">Disease Progression</h2>
+    <hr class="section-rule">
+    <div class="timeline-track">
+
+      <div class="timeline-node node-incubation reveal">
+        <p class="node-days">DAYS 0–14</p>
+        <h3 class="node-stage-label">Silent Incubation</h3>
+        <ul class="node-symptoms">
+          <li>No observable symptoms</li>
+          <li>Fully contagious to others</li>
+          <li>Fungal cells alter host DNA</li>
+          <li>Virus production begins internally</li>
+        </ul>
+        <div class="severity-bar sev-incubation"><div class="severity-fill"></div></div>
+        <span class="node-badge badge-contagious">⚠ CONTAGIOUS</span>
+      </div>
+
+      <div class="timeline-node node-stage1 reveal">
+        <p class="node-days">DAYS 1–5 (POST-SYMPTOM)</p>
+        <h3 class="node-stage-label">Stage 1 — Onset</h3>
+        <ul class="node-symptoms">
+          <li>Fever 101–104°F</li>
+          <li>Severe headache, fatigue</li>
+          <li>Muscle aches, chills</li>
+          <li>Flu-like presentation</li>
+          <li>Cognitive fog begins</li>
+        </ul>
+        <div class="severity-bar sev-s1"><div class="severity-fill"></div></div>
+        <span class="node-badge badge-contagious">HIGH CONTAGION</span>
+      </div>
+
+      <div class="timeline-node node-stage2 reveal">
+        <p class="node-days">DAYS 6–12</p>
+        <h3 class="node-stage-label">Stage 2 — Neurological</h3>
+        <ul class="node-symptoms">
+          <li>Loss of speech (aphasia)</li>
+          <li>Tremors, involuntary movement</li>
+          <li>Severe disorientation</li>
+          <li>Loss of fine motor control</li>
+          <li>Confusion, emotional lability</li>
+        </ul>
+        <div class="severity-bar sev-s2"><div class="severity-fill"></div></div>
+        <span class="node-badge badge-critical">CRITICAL</span>
+      </div>
+
+      <div class="timeline-node node-stage3 reveal">
+        <p class="node-days">DAY 13+</p>
+        <h3 class="node-stage-label">Stage 3 — Locked-In</h3>
+        <ul class="node-symptoms">
+          <li>Complete loss of motor function</li>
+          <li>Complete loss of speech</li>
+          <li>Consciousness fully preserved</li>
+          <li>Brainstem failure imminent</li>
+          <li><strong>No survivors recorded</strong></li>
+        </ul>
+        <div class="severity-bar sev-s3"><div class="severity-fill"></div></div>
+        <span class="node-badge badge-fatal">87% FATAL</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- KEY FIGURES -->
+<section id="figures">
+  <p class="section-label">SECTION 03</p>
+  <h2 class="section-title">Key Figures</h2>
+  <hr class="section-rule">
+  <div class="figures-grid">
+
+    <div class="figure-card reveal">
+      <div class="card-header">
+        <div class="card-id-badge">DR-01</div>
+        <div>
+          <h3 class="card-name">Dr. Amara Osei</h3>
+          <p class="card-role">ER Attending — NYC Hospital System</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Osei has become one of the most visible figures in the public debate over healthcare worker obligations. She contracted Neuron-X in the first weeks of the outbreak and kept working. To some she represents exactly what medicine is supposed to look like. To others, her situation is the clearest possible illustration of the problem: a system that asks its workers to absorb risk that the people designing the policies never have to face themselves.</p>
+        <span class="card-status status-infected">⬤ INFECTED — STAGE 1</span>
+      </div>
+    </div>
+
+    <div class="figure-card reveal">
+      <div class="card-header">
+        <div class="card-id-badge">RS-02</div>
+        <div>
+          <h3 class="card-name">Maya Chen</h3>
+          <p class="card-role">PhD Candidate — Columbia Virology</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Chen was among the first researchers to connect the outbreak to industrial pollution altering local fungal behavior. She submitted findings to city health officials before the public announcement and says they went unacknowledged. Since going public independently, she has been both widely cited and officially questioned. She has not changed her position. Her work sits at the center of ongoing arguments about what officials knew and when they knew it.</p>
+        <span class="card-status status-active">⬤ ACTIVE — RESEARCHER</span>
+      </div>
+    </div>
+
+    <div class="figure-card reveal">
+      <div class="card-header">
+        <div class="card-id-badge">OF-03</div>
+        <div>
+          <h3 class="card-name">Commissioner David Rath</h3>
+          <p class="card-role">NYC Health Commissioner</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Rath is the face of the city's official response. He holds the briefings, issues the directives, and stands in front of a public that is scared and looking for someone to hold accountable. His answers about what the Health Department knew prior to the official identification of Neuron-X have been widely criticized as incomplete. Whether that reflects a cover-up or a failure of information flow internally is still an open question.</p>
+        <span class="card-status status-active">⬤ ACTIVE — UNDER SCRUTINY</span>
+      </div>
+    </div>
+
+    <div class="figure-card reveal">
+      <div class="card-header">
+        <div class="card-id-badge">WK-04</div>
+        <div>
+          <h3 class="card-name">Essential Workers Coalition</h3>
+          <p class="card-role">Transit, Retail, Delivery — NYC</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Store workers, transit employees, and delivery drivers have no option to wait this out from home. They are on the front lines of daily exposure without the PPE, hazard pay, or policy protection that the visibility of the crisis would seem to demand. The gap between people who can modify their lives and people who cannot has become one of the outbreak's most discussed fault lines, and this group is at its center.</p>
+        <span class="card-status status-active">⬤ ACTIVE — ONGOING EXPOSURE</span>
+      </div>
+    </div>
+
+    <div class="figure-card reveal">
+      <div class="card-header">
+        <div class="card-id-badge">AN-05</div>
+        <div>
+          <h3 class="card-name">"The Locked-In"</h3>
+          <p class="card-role">Anonymous — Social Media, Stage 2</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Someone propped a phone above their hospital bed and started posting. The posts are short, sometimes fragmented, and together they document losing the ability to speak and move while staying completely aware of everything happening around them. The account has drawn millions of followers. It has also changed how a lot of people understand what Stage 3 actually means. Identity: <span class="redact">████████ ██████████</span>.</p>
+        <span class="card-status status-anonymous">⬤ UNIDENTIFIED — STAGE 2</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- COMPETING NARRATIVES -->
+<div id="narratives">
+  <div class="inner">
+    <p class="section-label">SECTION 04</p>
+    <h2 class="section-title">Competing Narratives</h2>
+    <hr class="section-rule">
+    <div class="narratives-grid">
+
+      <div class="narrative-card narrative-official reveal">
+        <div class="narrative-badge">✓ OFFICIAL</div>
+        <h3 class="narrative-title">Industrial Pollution / Zoonotic Origin</h3>
+        <p class="narrative-body">The official position from city and federal health authorities is that Neuron-X is the result of a natural process accelerated by environmental neglect. Industrial pollutants altered a native fungal species over time, enabling it to spread airborne cells that interact with host DNA to produce the virus internally. The neurological specificity of the disease is explained by how the brain's biochemical environment interacts with the modified fungal material. This was preventable, officials acknowledge, but it was not deliberate.</p>
+        <p class="narrative-source"><strong>SOURCE:</strong> NYC DEPT. OF HEALTH — PRESS BRIEFING 05.02.2026 / CDC EMERGENCY ADVISORY</p>
+      </div>
+
+      <div class="narrative-card narrative-disputed reveal">
+        <div class="narrative-badge">⚠ DISPUTED</div>
+        <h3 class="narrative-title">Institutional Cover-Up</h3>
+        <p class="narrative-body">Researchers and journalists are raising questions about what health officials knew before the official identification three weeks ago. Maya Chen's pre-announcement findings, submitted to city health and not acknowledged, are a key piece of evidence. The argument is not that the virus was engineered or released intentionally, but that the conditions creating it were known to be dangerous, that warnings existed, and that they were deprioritized. The city disputes this characterization. The documentation is still emerging.</p>
+        <p class="narrative-source"><strong>SOURCE:</strong> INDEPENDENT REPORTING / RESEARCH COMMUNITY</p>
+      </div>
+
+      <div class="narrative-card narrative-unverified reveal">
+        <div class="narrative-badge">? UNVERIFIED</div>
+        <h3 class="narrative-title">Bioweapon Theory</h3>
+        <p class="narrative-body">Online communities have pointed to the neurological precision of Neuron-X as evidence of engineered design. A pathogen that specifically targets neural function while leaving other organs intact, they argue, could not emerge naturally. Virologists reviewing the genome disagree. The targeting is consistent with how the brain's biochemistry interacts with this class of fungal material. No peer-reviewed evidence supports intentional engineering. The theory has no verified source but has contributed to real-world violence, which makes its spread dangerous regardless of its accuracy.</p>
+        <p class="narrative-source"><strong>SOURCE:</strong> FRINGE ONLINE FORUMS / NO VERIFIED ATTRIBUTION</p>
+      </div>
+
+      <div class="narrative-card narrative-dangerous reveal">
+        <div class="narrative-badge">✕ DANGEROUS</div>
+        <h3 class="narrative-title">Misinformation About Transmission</h3>
+        <p class="narrative-body">A significant portion of the public is either underestimating or actively disputing the confirmed transmission routes. Some question whether animals are really vectors. Others downplay how serious airborne spread actually is, or treat the two-week silent incubation period as unlikely rather than the documented norm. You can see the results in real time: some people are hypervigilant and others are acting like the threat is minimal. Public health measures keep tightening in response, but policies land differently depending on who you are and what your daily life requires.</p>
+        <p class="narrative-source"><strong>SOURCE:</strong> SOCIAL MEDIA MONITORING / NYC HEALTH MISINFORMATION TRACKER</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- VIDEO -->
+<div id="video-section">
+  <div class="inner">
+    <p class="section-label">SECTION 05</p>
+    <h2 class="section-title">Video Report</h2>
+    <hr class="section-rule">
+    <div class="video-wrapper reveal">
+      <iframe
+        src="https://www.youtube.com/embed/3WXn1BdKU"
+        title="Neuron-X Outbreak Video Report"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+    <p class="video-caption">NEURON-X OUTBREAK — VIDEO DOCUMENTATION — NYC, MAY 2026</p>
+  </div>
+</div>
+
+<!-- NEWSLETTER -->
+<div id="newsletter-section">
+  <div class="inner">
+    <p class="section-label">SECTION 06</p>
+    <h2 class="section-title">Newsletter</h2>
+    <hr class="section-rule">
+
+    <div class="newsletter-container reveal">
+      <div class="newsletter-header">
+        <span class="newsletter-kicker">Emergency Health Dispatch · NYC Metro Area</span>
+        <div class="newsletter-masthead">The Outbreak Bulletin</div>
+        <div class="newsletter-dateline">Vol. 1, Issue 3 &nbsp;|&nbsp; May 2026 &nbsp;|&nbsp; New York City</div>
+      </div>
+      <div class="newsletter-rule-red"></div>
+      <div class="newsletter-body">
+        <h2 class="newsletter-headline">Deadly "Neuron-X" Virus Outbreak Raises Ethical Questions in New York City</h2>
+        <p class="newsletter-subhead">A new pathogen spreads through the boroughs as hospitals strain and healthcare workers face impossible choices</p>
+        <div class="newsletter-byline">NYC HEALTH CORRESPONDENT &nbsp;|&nbsp; MAY 2026</div>
+        <div class="newsletter-columns">
+          <div class="newsletter-text">
+            <p>Health officials have confirmed the rapid spread of a newly identified pathogen, dubbed the "Neuron-X" virus, across multiple boroughs, prompting urgent public health measures and raising difficult ethical questions for frontline workers.</p>
+            <p>The virus attacks the human nervous system, progressively destroying brain function. Infected individuals lose the ability to speak and perform basic motor tasks, often becoming fully incapacitated within days of symptom onset. Authorities report a high fatality rate, with no confirmed cure to date.</p>
+            <p>Neuron-X is highly contagious and spreads through airborne transmission. Experts warn that prolonged or repeated exposure to infected individuals significantly increases the risk of infection. Complicating containment efforts, animals have been identified as potential carriers, and the virus can incubate undetected for up to two weeks.</p>
+          </div>
+          <div class="newsletter-text">
+            <p>Researchers believe the outbreak may be linked to a mutated fungus exposed to industrial pollutants. According to preliminary findings, the fungus releases airborne cells that, once inhaled, interact with host DNA and generate the virus within the body.</p>
+            <div class="newsletter-pullquote">
+              <blockquote>"We are committed to patient care, but the level of risk is unlike anything we've seen."</blockquote>
+              <cite>ICU Physician, NYC Hospital — identity withheld</cite>
+            </div>
+            <p>Hospitals across the city are under mounting pressure as cases surge. Doctors, nurses, and other healthcare workers face daily exposure risks, leading to growing concern within the medical community.</p>
+          </div>
+        </div>
+        <div class="newsletter-text">
+          <p>The crisis has sparked a broader ethical debate: Are healthcare workers obligated to treat infected patients despite the great danger to their own lives? Medical unions and ethics boards are calling for clearer guidelines, as well as stronger protective measures.</p>
+          <p>City officials urge residents to limit close contact, wear protective masks, and report symptoms immediately. Schools, workplaces, and public institutions are reviewing contingency plans as the situation evolves. Scientists are racing to better understand the virus, but for now, uncertainty and fear continue to spread alongside Neuron-X.</p>
+        </div>
+        <div class="newsletter-alert-box">
+          <div class="newsletter-alert-icon">!</div>
+          <div class="newsletter-alert-text">Public health advisory: If you are experiencing symptoms including fever, severe headache, or cognitive changes, call 311 before visiting any emergency room. Do not self-diagnose. Dedicated Neuron-X intake facilities are operating across the city.</div>
+        </div>
+      </div>
+      <div class="newsletter-footer-bar">
+        <span>The Outbreak Bulletin &copy; 2026</span>
+        <span>IDST 124 — Create Your Own Pandemic</span>
+        <span>For educational purposes only</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DIARY / FORUM -->
+<div id="diary-section">
+  <div class="inner">
+    <p class="section-label">SECTION 07</p>
+    <h2 class="section-title">Field Diary</h2>
+    <hr class="section-rule">
+
+    <div class="forum-container reveal">
+
+      <div class="forum-header">
+        <div class="forum-breadcrumb">
+          r/NeuronX_NYC <span>›</span> Discussion <span>›</span> Personal Accounts
+        </div>
+        <div class="forum-thread-title-bar">
+          <div>
+            <div class="forum-thread-title">Three weeks in — what it actually feels like to live in this city right now</div>
+            <div class="forum-thread-meta">
+              <span class="forum-tag ftag-pinned">📌 Pinned</span>
+              <span class="forum-tag ftag-flair">Personal Account</span>
+              <span class="forum-tag ftag-nyc">NYC</span>
+            </div>
+          </div>
+        </div>
+        <div class="forum-stats-bar">
+          <div class="forum-stat"><strong>2.4k</strong> upvotes</div>
+          <div class="forum-stat"><strong>381</strong> comments</div>
+          <div class="forum-stat"><strong>Posted:</strong> May 16, 2026</div>
+          <div class="forum-stat"><strong>Crossposted:</strong> 14 communities</div>
+        </div>
+      </div>
+
+      <!-- OP POST -->
+      <div class="forum-post op">
+        <div class="forum-sidebar">
+          <div class="forum-avatar">u/</div>
+          <div class="forum-username">throwaway_nycresident</div>
+          <div class="forum-user-title">New Yorker</div>
+          <div class="forum-op-badge">OP</div>
+          <div class="forum-post-count">Posts: 47</div>
+        </div>
+        <div class="forum-post-body">
+          <div class="forum-post-header">
+            <span class="forum-post-number">#1 — Original Post</span>
+            <span class="forum-post-timestamp">May 16, 2026 · 11:42 AM</span>
+          </div>
+          <div class="forum-post-text">
+            <p>The city hasn't stopped, but it definitely doesn't feel the same. Everything's more tense now, more deliberate. People still go outside, but there's a sense of fear. Sidewalks that used to feel impossible to navigate now have this eerie breathing room, like everyone just agreed to spread out without anyone saying so. It's been about three weeks since Neuron-X was officially identified, and you can't escape information about it. Posters everywhere, constant announcements. It attacks the nervous system, shuts down your ability to speak and move, and eventually kills you. The two-week incubation period is what freaks people out the most, because it means anyone walking past you could already be infected and have no idea.</p>
+            <p>What makes it even more unsettling is how it started. The idea that a fungus, altered by pollution, eventually adapted into an airborne virus that rewrites your DNA doesn't feel like bad luck. It feels like something that built up over time, which changes how people think about blame. Not just for spreading it, but for letting conditions get bad enough for it to exist in the first place. And because it spreads through the air and gets more dangerous the longer you're around someone, people have basically stopped lingering. Conversations are shorter, interactions feel loaded, and even standing in line next to someone carries a kind of weight it never used to.</p>
+            <p>That said, not everyone gets to just stay home and wait it out. Store workers, transit employees, and delivery drivers are still out there every single day. That gap has become really hard to ignore. The virus can infect anyone, but the ability to avoid it is not evenly distributed. Hospitals have become a focal point too, especially because of how brutal the symptoms are. Patients with Neuron-X lose the ability to speak or move, which means they need constant, intensive care, and that's put healthcare workers in an incredibly difficult position. The debate over whether they're obligated to keep treating patients, knowing how deadly and contagious the virus is, has gotten loud and hasn't really been resolved.</p>
+            <p>You see it play out just walking past a hospital. Protesters on one side are arguing that doctors and nurses have a duty to show up no matter what. People on the other side are saying that expecting someone to risk their life with barely any protection isn't a duty; it's just negligence dressed up as heroism. There's no clear answer, and honestly, it doesn't seem like one is coming anytime soon. What's clear is that the people making those decisions from the outside aren't the ones actually walking into those rooms every day.</p>
+            <p>On top of everything, misinformation is making things messier. People question whether animals are really vectors, or they downplay how serious airborne transmission actually is. You can see it play out in real time. Some people are hypervigilant; others are acting like it's barely anything. Public health rules keep tightening in response, with limits on gatherings and constant reminders about keeping distance, but those policies land differently depending on who you are and what your life looks like. The biggest shift overall is just how aware everyone is of space, of risk, of the people around them. New York is still moving. It just feels a lot more careful about it.</p>
+          </div>
+          <div class="forum-post-footer">
+            <div class="forum-reaction up">▲ 2,418</div>
+            <div class="forum-reaction">💬 381 comments</div>
+            <div class="forum-reaction">⤴ Share</div>
+            <div class="forum-reaction flag">⚑ Report</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPLY 1 -->
+      <div class="forum-post">
+        <div class="forum-sidebar">
+          <div class="forum-avatar" style="background:rgba(0,201,177,0.12);border-color:rgba(0,201,177,0.3);color:var(--teal)">RN</div>
+          <div class="forum-username">nurse_anon_nyc</div>
+          <div class="forum-user-title">Verified Healthcare</div>
+          <div class="forum-post-count">Posts: 203</div>
+        </div>
+        <div class="forum-post-body">
+          <div class="forum-post-header">
+            <span class="forum-post-number">#2</span>
+            <span class="forum-post-timestamp">May 16, 2026 · 12:09 PM</span>
+          </div>
+          <div class="forum-post-text">
+            <p>The hospital point hits hard. I'm a nurse and I've been on shift every day this week. The protesters outside are not wrong that we have a duty. But they're also not the ones suiting up and walking into those rooms. The PPE we have reduces risk, it doesn't eliminate it. Nobody is telling us that clearly enough. What's being asked of us right now is not a small thing, and the people calling it heroism from the outside need to understand that heroism and being given no other option look exactly the same from where I'm standing.</p>
+          </div>
+          <div class="forum-post-footer">
+            <div class="forum-reaction up">▲ 891</div>
+            <div class="forum-reaction">💬 Reply</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPLY 2 -->
+      <div class="forum-post">
+        <div class="forum-sidebar">
+          <div class="forum-avatar" style="background:rgba(245,166,35,0.1);border-color:rgba(245,166,35,0.3);color:var(--amber)">DL</div>
+          <div class="forum-username">delivery_worker_bk</div>
+          <div class="forum-user-title">Essential Worker</div>
+          <div class="forum-post-count">Posts: 12</div>
+        </div>
+        <div class="forum-post-body">
+          <div class="forum-post-header">
+            <span class="forum-post-number">#3</span>
+            <span class="forum-post-timestamp">May 16, 2026 · 1:33 PM</span>
+          </div>
+          <div class="forum-post-text">
+            <p>The "ability to avoid it is not evenly distributed" part. Yeah. I've been delivering packages six days a week since this started. I don't get to work remotely. I don't get hazard pay. I do get a mask that may or may not do anything against something that spreads through the air and builds up with time. The people I'm delivering to are staying home because they can. I'm out here so they can. I just wish someone in an official position would acknowledge that gap instead of talking around it.</p>
+          </div>
+          <div class="forum-post-footer">
+            <div class="forum-reaction up">▲ 1,104</div>
+            <div class="forum-reaction">💬 Reply</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPLY 3 -->
+      <div class="forum-post">
+        <div class="forum-sidebar">
+          <div class="forum-avatar" style="background:rgba(155,109,255,0.1);border-color:rgba(155,109,255,0.3);color:var(--violet)">SC</div>
+          <div class="forum-username">sci_grad_student</div>
+          <div class="forum-user-title">Researcher</div>
+          <div class="forum-post-count">Posts: 88</div>
+        </div>
+        <div class="forum-post-body">
+          <div class="forum-post-header">
+            <span class="forum-post-number">#4</span>
+            <span class="forum-post-timestamp">May 16, 2026 · 2:51 PM</span>
+          </div>
+          <div class="forum-post-text">
+            <p>The "felt like bad luck vs something that built up" framing is important. From a research perspective, the fungal mutation pathway here wasn't sudden. The environmental conditions that enabled it have been deteriorating for years. There were warning signs. The question our lab keeps coming back to isn't just how to treat this, it's how we got to a place where a slow-moving environmental disaster could produce a pathogen this serious before anyone with authority decided it was worth addressing.</p>
+          </div>
+          <div class="forum-post-footer">
+            <div class="forum-reaction up">▲ 644</div>
+            <div class="forum-reaction">💬 Reply</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENTS -->
+<section id="documents">
+  <p class="section-label">SECTION 08</p>
+  <h2 class="section-title">Documents &amp; Media</h2>
+  <hr class="section-rule">
+  <div class="docs-grid">
+
+    <div class="doc-card reveal">
+      <span class="doc-type-badge type-video">▶ VIDEO</span>
+      <h3 class="doc-title">Outbreak Report</h3>
+      <p class="doc-desc">Video documentation of the Neuron-X outbreak in NYC. On-the-ground reporting from the first weeks after the official identification in May 2026.</p>
+      <a href="#video-section" class="doc-btn">WATCH →</a>
+    </div>
+
+    <div class="doc-card reveal">
+      <span class="doc-type-badge type-newsletter">✦ NEWSLETTER</span>
+      <h3 class="doc-title">The Outbreak Bulletin</h3>
+      <p class="doc-desc">Emergency health dispatch covering the spread of Neuron-X, the strain on city hospitals, and the ethical debate that has split the medical community.</p>
+      <a href="#newsletter-section" class="doc-btn">READ →</a>
+    </div>
+
+    <div class="doc-card reveal">
+      <span class="doc-type-badge type-diary">◈ FIELD DIARY</span>
+      <h3 class="doc-title">Three Weeks In</h3>
+      <p class="doc-desc">A first-person account posted to a public forum three weeks after the official identification of Neuron-X. Documents life on the ground in NYC, May 2026.</p>
+      <a href="#diary-section" class="doc-btn">READ →</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="background:var(--bg2);max-width:100%;padding:100px 40px;border-top:var(--border)">
+  <div style="max-width:1200px;margin:0 auto">
+    <p class="section-label">SECTION 09</p>
+    <h2 class="section-title">Public Health FAQ</h2>
+    <hr class="section-rule">
+    <div class="faq-list">
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span class="faq-q-text">How do I know if I've been exposed to Neuron-X?</span>
+          <span class="faq-chevron"></span>
+        </div>
+        <div class="faq-answer">
+          <p>The honest answer is that you may not know right away. Neuron-X has a <strong>two-week silent incubation period</strong> during which you are contagious but have no symptoms. If you have had sustained close contact with a confirmed case, or spent extended time in enclosed spaces with other people, call the NYC Health hotline before going anywhere near a medical facility. Showing up at an emergency room without warning puts other people at risk before you even check in.</p>
+          <div class="warning-inline">⚠ HOTLINE: 311 / NYC HEALTH OUTBREAK RESPONSE</div>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span class="faq-q-text">Is it safe to go to work or school?</span>
+          <span class="faq-chevron"></span>
+        </div>
+        <div class="faq-answer">
+          <p>Current guidance asks anyone who can work remotely to do so. Schools are operating under modified protocols with enhanced ventilation and mandatory masking. If your work requires physical presence, N95 masking is required and exposure time should be minimized where possible. The core transmission mechanic is cumulative: the longer you are in close proximity to others, the higher your risk. Short, well-ventilated interactions carry significantly lower risk than prolonged ones in enclosed spaces. Check the city's updated zone guidance before making decisions.</p>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span class="faq-q-text">What should I do if a family member is showing symptoms?</span>
+          <span class="faq-chevron"></span>
+        </div>
+        <div class="faq-answer">
+          <p>Isolate them immediately in a separate room with its own ventilation if possible. Keep bedding, towels, and utensils separate. Wear an N95 mask if you need to enter the room. Then call the NYC Health outbreak line before going anywhere near a hospital. Dedicated Neuron-X intake facilities exist specifically to keep transmission out of general emergency rooms. Stage 1 of Neuron-X presents identically to influenza. Do not assume it is the flu and wait. Only a clinical evaluation can confirm the diagnosis, and earlier intervention matters.</p>
+          <div class="warning-inline">⚠ DO NOT SELF-DIAGNOSE — CALL FIRST</div>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span class="faq-q-text">Is there a treatment or cure?</span>
+          <span class="faq-chevron"></span>
+        </div>
+        <div class="faq-answer">
+          <p>As of May 2026, <strong>there is no approved treatment or cure</strong>. Because Neuron-X is produced inside the host's own neural tissue, conventional antiviral approaches do not work. Several experimental protocols are under emergency evaluation at research hospitals across the city. Stage 1 patients are receiving supportive care. Stage 3 patients are fully conscious and require continuous intensive nursing support but cannot communicate through conventional means. Researchers are working as fast as they can. There is nothing to offer yet.</p>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span class="faq-q-text">Are animals actually vectors, or is that misinformation?</span>
+          <span class="faq-chevron"></span>
+        </div>
+        <div class="faq-answer">
+          <p>Animals are confirmed vectors. This is not in dispute within the scientific community, though it has been questioned online. Urban wildlife including rats and birds can carry the fungal material that triggers Neuron-X production when inhaled. Avoid contact with urban wildlife and their droppings. Report unusual animal die-offs to 311 immediately. The misinformation around this specific point is worth taking seriously because it has led some people to underestimate the transmission risk in areas with high urban wildlife density.</p>
+        </div>
+      </div>
+
+      <div class="faq-item reveal">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          <span class="faq-q-text">Why does this feel different from other public health crises?</span>
+          <span class="faq-chevron"></span>
+        </div>
+        <div class="faq-answer">
+          <p>A few things are genuinely different here. The two-week silent contagious window means the risk is invisible in a way most respiratory illnesses are not. The nature of Stage 3, where patients are fully conscious but completely unable to move or speak, is particularly disturbing and has reshaped how people understand the stakes. And the origin in industrial pollution means this does not feel like random bad luck. It feels like something that was allowed to happen, which changes the emotional texture of the crisis and makes the question of accountability much harder to set aside.</p>
+          <div class="warning-inline">⚠ MISINFORMATION KILLS — SEEK CARE WITHOUT FEAR</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-left">
+    <div class="footer-logo">NEURON-X</div>
+    <div class="footer-sub">NYC Outbreak Documentation Project</div>
+  </div>
+  <div class="footer-right">
+    <span>IDST 124: Create Your Own Pandemic</span>
+    <span>[University Name]</span>
+    <span>Group Project — Due April 17, 2026</span>
+  </div>
+  <div class="footer-disclaimer">
+    THIS WEBSITE IS AN ACADEMIC PROJECT CREATED FOR IDST 124. ALL CONTENT IS FICTIONAL. NEURON-X IS NOT A REAL PATHOGEN. NO MEDICAL ADVICE IS BEING PROVIDED. THE NAMES, EVENTS, AND ORGANIZATIONS DEPICTED ARE INVENTED FOR EDUCATIONAL PURPOSES ONLY.
+  </div>
+</footer>
+
+<script>
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+for(let i=0;i<80;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.5+0.3,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,alpha:Math.random()*0.5+0.1,color:Math.random()>0.6?'224,48,48':'236,232,224'})}
+function animateParticles(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(${p.color},${p.alpha})`;ctx.fill()});requestAnimationFrame(animateParticles)}
+animateParticles();
+
+function countUp(el,target,duration){let start=0;const step=target/(duration/16);const timer=setInterval(()=>{start+=step;if(start>=target){start=target;clearInterval(timer)}el.textContent=Math.floor(start)},16)}
+const statEls=document.querySelectorAll('.stat-value[data-target]');
+let counted=false;
+function checkStats(){if(counted)return;const first=document.querySelector('.hero-stats');if(!first)return;if(first.getBoundingClientRect().top<window.innerHeight){counted=true;statEls.forEach(el=>countUp(el,parseInt(el.dataset.target),1500))}}
+window.addEventListener('scroll',checkStats);
+setTimeout(checkStats,500);
+
+const reveals=document.querySelectorAll('.reveal');
+const observer=new IntersectionObserver((entries)=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);observer.unobserve(e.target)}})},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+reveals.forEach(el=>observer.observe(el));
+
+const sevObserver=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.severity-fill').forEach(f=>{f.style.transition='width 1.5s ease 0.3s'});sevObserver.unobserve(e.target)}})},{threshold:0.3});
+document.querySelectorAll('.timeline-node').forEach(n=>sevObserver.observe(n));
+
+function toggleFAQ(el){const item=el.parentElement;const isOpen=item.classList.contains('open');document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));if(!isOpen)item.classList.add('open')}
+</script>
+</body>
+</html>
